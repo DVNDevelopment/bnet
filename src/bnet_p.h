@@ -50,6 +50,10 @@ extern void dbgPrintfData(const void* _data, uint32_t _size, const char* _format
 #	define BNET_CONFIG_MAX_INCOMING_BUFFER_SIZE (64<<10)
 #endif // BNET_CONFIG_MAX_INCOMING_BUFFER_SIZE
 
+#ifndef BNET_CONFIG_MAX_CORK_BUFFER_SIZE
+#	define BNET_CONFIG_MAX_CORK_BUFFER_SIZE (8<<10)
+#endif // BNET_CONFIG_MAX_INCOMING_BUFFER_SIZE
+
 #if BX_PLATFORM_WINDOWS || BX_PLATFORM_XBOX360
 #	if BX_PLATFORM_WINDOWS
 #		if !defined(_WIN32_WINNT)

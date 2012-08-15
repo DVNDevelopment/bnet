@@ -109,6 +109,9 @@ namespace bnet
 			, m_raw(false)
 			, m_tcpHandshake(true)
 			, m_sslHandshake(false)
+			, m_cork(false)
+			, m_corkBuffer( (uint8_t*)g_realloc(NULL, BNET_CONFIG_MAX_CORK_BUFFER_SIZE) )
+			, m_corkBufferPos(0)
 		{
 			BX_TRACE("ctor %d", m_handle);
 		}
@@ -117,6 +120,7 @@ namespace bnet
 		{
 			BX_TRACE("dtor %d", m_handle);
 			g_free(m_incomingBuffer);
+			g_free(m_corkBuffer);
 		}
 
 		void connect(uint16_t _handle, uint32_t _ip, uint16_t _port, bool _raw, SSL_CTX* _sslCtx)
@@ -230,6 +234,16 @@ namespace bnet
 			{
 				m_outgoing.push(_msg);
 				update();
+			}
+		}
+
+		void cork(bool _cork)
+		{
+			m_cork = _cork;
+			if ( !m_cork && (m_corkBufferPos > 0) )
+			{
+				send( (const char*)m_corkBuffer, m_corkBufferPos );
+				m_corkBufferPos = 0;
 			}
 		}
 
@@ -569,11 +583,22 @@ namespace bnet
 				else
 #endif // BNET_CONFIG_OPENSSL
 				{
-					bytes = ::send(m_socket
-						, &_data[offset]
-						, _len
-						, 0
-						);
+					if ( m_cork )
+					{
+						memcpy(&m_corkBuffer[m_corkBufferPos],_data,_len);
+						m_corkBufferPos+=_len;
+						//BX_TRACE("corked %d bytes -> %d bytes",_len,m_corkBufferPos);
+						return true;
+					}
+					else
+					{
+						//BX_TRACE("sent %d byte packet",_len);
+						bytes = ::send(m_socket
+							, &_data[offset]
+							, _len
+							, 0
+							);
+					}
 				}
 				
 				if (0 > bytes)
@@ -612,6 +637,10 @@ namespace bnet
 		bool m_raw;
 		bool m_tcpHandshake;
 		bool m_sslHandshake;
+		bool m_cork;
+
+		uint8_t* m_corkBuffer;
+		uint32_t m_corkBufferPos;
 	};
 
 	typedef FreeList<Connection> Connections;
@@ -932,6 +961,17 @@ namespace bnet
 			}
 		}
 
+		void cork(uint16_t _handle, bool _cork)
+		{
+			BX_CHECK(_handle == invalidHandle // loopback
+				|| _handle < m_connections->getMaxHandles(), "Invalid handle %d!", _handle);
+			if (invalidHandle != _handle)
+			{
+				Connection* connection = m_connections->getFromHandle(_handle);
+				connection->cork(_cork);
+			}
+		}
+
 		Message* recv()
 		{
 			if (NULL != m_listenSockets)
@@ -1099,6 +1139,11 @@ namespace bnet
 	void send(OutgoingMessage* _msg)
 	{
 		s_ctx.send(_msg);
+	}
+
+	void cork(uint16_t _handle, bool _cork)
+	{
+		s_ctx.cork(_handle, _cork);
 	}
 
 	IncomingMessage* recv()

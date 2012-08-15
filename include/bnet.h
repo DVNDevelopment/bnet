@@ -69,6 +69,9 @@ namespace bnet
 	/// Send message.
 	void send(OutgoingMessage* _msg);
 
+	/// Cork the socket
+	void cork(uint16_t _handle, bool _cork);
+
 	/// Process receive.
 	IncomingMessage* recv();
 
