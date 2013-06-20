@@ -901,6 +901,11 @@ namespace bnet
 
 		void disconnect(uint16_t _handle, bool _finish)
 		{
+			if (_handle == bnet::loopbackHandle)
+			{
+				return;
+			}
+
 			BX_CHECK(_handle < m_connections->getMaxHandles(), "Invalid handle %d!", _handle);
 
 			Connection* connection = m_connections->getFromHandle(_handle);
@@ -924,10 +929,10 @@ namespace bnet
 
 		void notify(uint16_t _handle, uint64_t _userData)
 		{
-			BX_CHECK(_handle == invalidHandle // loopback
+			BX_CHECK(_handle == loopbackHandle // loopback
 			      || _handle < m_connections->getMaxHandles(), "Invalid handle %d!", _handle);
 
-			if (invalidHandle != _handle)
+			if (loopbackHandle != _handle)
 			{
 				Message* msg = msgAlloc(_handle, sizeof(_userData), false, Internal::Notify);
 				memcpy(msg->data, &_userData, sizeof(_userData) );
@@ -946,10 +951,10 @@ namespace bnet
 
 		void send(Message* _msg)
 		{
-			BX_CHECK(_msg->handle == invalidHandle // loopback
+			BX_CHECK(_msg->handle == loopbackHandle // loopback
 			      || _msg->handle < m_connections->getMaxHandles(), "Invalid handle %d!", _msg->handle);
 
-			if (invalidHandle != _msg->handle)
+			if (loopbackHandle != _msg->handle)
 			{
 				Connection* connection = m_connections->getFromHandle(_msg->handle);
 				connection->send(_msg);
@@ -963,9 +968,9 @@ namespace bnet
 
 		void cork(uint16_t _handle, bool _cork)
 		{
-			BX_CHECK(_handle == invalidHandle // loopback
+			BX_CHECK(_handle == loopbackHandle // loopback
 				|| _handle < m_connections->getMaxHandles(), "Invalid handle %d!", _handle);
-			if (invalidHandle != _handle)
+			if (loopbackHandle != _handle)
 			{
 				Connection* connection = m_connections->getFromHandle(_handle);
 				connection->cork(_cork);
@@ -993,7 +998,7 @@ namespace bnet
 
 			while (NULL != msg)
 			{
-				if (invalidHandle == msg->handle) // loopback
+				if (loopbackHandle == msg->handle) // loopback
 				{
 					return msg;
 				}

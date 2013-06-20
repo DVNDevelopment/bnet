@@ -12,6 +12,7 @@
 namespace bnet
 {
 	static const uint16_t invalidHandle = 0xffff;
+	static const uint16_t loopbackHandle = 0xfffe;
 	static const uint16_t maxMessageSize = 0xffff;
 
 	struct MessageId
