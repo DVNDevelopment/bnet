@@ -15,6 +15,9 @@ project "bnet"
 	configuration { "android-arm7" }
 		includedirs { BNET_DIR .. "3rdparty/openssl/lib/android_arm7/include" }
 
+	configuration { "ouya" }
+		includedirs { BNET_DIR .. "3rdparty/openssl/lib/android_arm7/include" }
+
 	configuration { "default-linux", "x32" }
 		includedirs { BNET_DIR .. "3rdparty/openssl/lib/linux-generic32/include" }
 
